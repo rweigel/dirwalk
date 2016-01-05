@@ -2,6 +2,7 @@
 
 - Directory listings are cached in memory.
 - Filters may be applied to directories and files.
+- Tested on Apache 2.2, http-server, and Node Express 4.0 directory listings.
 
 ## Install and Test
 
@@ -25,7 +26,7 @@ dirwalk(opts,
 
 Only the paramter `url` is required.  The parameter `id` is used only when one of the debug options is `true`.
 
-See also `test.js`.
+See also `test.js` for examples using `filepattern` and `dirpattern` options.
 
 ## TODO
 
