@@ -292,7 +292,7 @@ function dirwalk(opts, path, cb) {
 			if (dirwalk[opts.url].onfinish) {
 				while (dirwalk[opts.url].onfinish.length > 0) {
 					copts = dirwalk[opts.url].onfinish.shift();
-					console.log(opts.id + " Found URL callback for " + copts.id + ".");
+					if (debug) console.log(opts.id + " Found URL callback for " + copts.id + ".");
 					finish(copts, list, flat);
 				}
 			}

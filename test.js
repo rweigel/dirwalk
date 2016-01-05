@@ -1,15 +1,19 @@
-var dirwalk = require('../tsds2/tsdsfe/js/dirwalk.js').dirwalk;
-
-var debug = false;
-var debugcache = false;
-
 var express = require('express');
 var app = express();
 var serveIndex = require('serve-index')
 app.use('/tmp', serveIndex('tmp/', {'icons': true}))
 app.listen(3000);
 
-var sequential = false;
+var dirwalk = require('../tsds2/tsdsfe/js/dirwalk.js').dirwalk;
+
+var debug = false;
+var debugcache = false;
+
+
+var sequential = true;
+console.log("-----------------------------------------------");
+console.log("Running tests with sequential = true in 500 ms.");
+console.log("-----------------------------------------------");
 
 // Wait for server to start.
 setTimeout(runtests, 500);
@@ -31,16 +35,33 @@ function finish(status) {
 	}
 	if (finish.Nc == Nt) {
 		if (finish.Np == Nt) {
-			console.log("All tests passed.")
-			process.exit(0);
+			console.log("-----------------");
+			console.log("All tests passed.");
+			console.log("-----------------");
+			if (sequential) {
+				sequential = false;
+				finish.Np = 0;
+				finish.Nf = 0;
+				finish.Nc = 0;
+				console.log("--------------------------------------")
+				console.log("Running tests with sequential = false.");
+				console.log("--------------------------------------")
+				runtests();
+			} else {
+				console.log("Exiting with status 0.")
+				process.exit(0);
+			}
 		} else {
-			console.log(finish.Nf + "/" + finish.Nc + " tests failed.")
+			console.log("--------------------------------------")
+			console.log(finish.Nf + "/" + finish.Nc + " tests failed.");
+			console.log("--------------------------------------")
+			console.log("Exiting with status 1.")
 			process.exit(1);
 		}
 	}
 }
 
-function runtests(sequential) {
+function runtests() {
 
 	if (sequential) {
 		test(1, sequential);
@@ -263,12 +284,9 @@ function test(i) {
 					console.log(i + "b FAIL " + bopts.url)
 					finish(false);
 				}
-				if (sequential) process.exit(0);
-
 			})
 		})
 	}
-
 }
 
 // Test API.
