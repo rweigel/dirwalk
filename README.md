@@ -1,4 +1,4 @@
-# Dirwalk - Create recursive directory listing of HTTP files and directories.
+# Dirwalk - Recursive HTTP directory listing
 
 - Directory listings are cached in memory.
 - Filters may be applied to directories and files.
