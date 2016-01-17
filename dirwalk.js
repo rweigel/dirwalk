@@ -70,7 +70,7 @@ function dirwalk(opts, path, cb) {
 		}
 		if (cache[url]) {
 			if (cache[url].ready) { // Needed?
-				if (debugcache) console.log(id + "Indirect cache hit for " + key)
+				if (debugcache) console.log(id + "Indirect cache hit for " + key);
 				finish(opts, cache[url].list, cache[url].flat);
 				return;			
 			}
@@ -253,6 +253,7 @@ function dirwalk(opts, path, cb) {
 						dirwalk[key].list = [];
 					}
 					dirwalk[key].list.push(path + href);
+					//dirwalk[key].list.push(path.replace(/^\//,"") + href);
 					dirwalk[key].flat[path].push(href);						
 				}
 			})
@@ -276,7 +277,6 @@ function dirwalk(opts, path, cb) {
 
 		if (debug) console.log(opts.id + " finish() callback.")
 
-		if (debug) console.log(opts.id + " Done.");
 		var nested = {};
 		for (flatkey in flat) {
 			if (flatkey.match(new RegExp(opts.dirpattern))) {
@@ -286,7 +286,7 @@ function dirwalk(opts, path, cb) {
 			}
 		}
 
-		writecache(opts.url, list, flat, nested);
+		//writecache(opts.url, list, flat, nested);
 
 		if (dirwalk[opts.url]) {
 			if (dirwalk[opts.url].onfinish) {
@@ -308,8 +308,8 @@ function dirwalk(opts, path, cb) {
 					kr = kr+1;
 				}
 			}
-			//console.log(listr);
 		}
+
 		if (opts.filepattern !== "") {
 			var listr = listr || [];
 			var kr = 0;
@@ -320,7 +320,6 @@ function dirwalk(opts, path, cb) {
 					kr = kr+1;
 				}
 			}
-			//console.log(listr)
 		}
 
 		if (typeof(listr) === "undefined") {

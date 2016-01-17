@@ -4,13 +4,12 @@ var serveIndex = require('serve-index')
 app.use('/tmp', serveIndex('tmp/', {'icons': true}))
 app.listen(3000);
 
-var dirwalk = require('../tsds2/tsdsfe/js/dirwalk.js').dirwalk;
+var dirwalk = require('./dirwalk.js').dirwalk;
 
 var debug = false;
-var debugcache = false;
+var debugcache = true;
 
-
-var sequential = true;
+var sequential = false;
 console.log("-----------------------------------------------");
 console.log("Running tests with sequential = true in 500 ms.");
 console.log("-----------------------------------------------");
@@ -21,10 +20,11 @@ setTimeout(runtests, 500);
 var Nt = 14; // Number of tests.
 
 function finish(status) {
+
 	if (typeof(finish.Np) === "undefined") {
-		finish.Np = 0;
-		finish.Nf = 0;
-		finish.Nc = 0;
+		finish.Np = 0; // Fails
+		finish.Nf = 0; // Passes
+		finish.Nc = 0; // Calls
 	}
 	finish.Nc = finish.Nc + 1;
 	//console.log(Nc)
@@ -265,7 +265,9 @@ function test(i) {
 		var url = "http://mag.gmu.edu/tmp/";
 		var opts = {id: "" + i + "a", url: url, dirpattern: "/a/a1/", debug: debug, debugcache: debugcache};
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (error) console.log(error);
+			if (error) {
+				console.log(error);
+			}
 			if (list.length == 12) {
 				console.log(i + "a PASS " + url)
 				finish(true);

@@ -5,7 +5,8 @@
 	"dependencies": {
 		"request" : "2.9.203",
 		"express" : "4.0.0",
-		"serve-index": "*"
+		"serve-index": "*",
+		"cheerio": "*"
 	},
 	"scripts": {
 		"test": "node test.js",
