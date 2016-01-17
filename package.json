@@ -1,0 +1,14 @@
+{
+	"name": "dirwalk",
+  	"version": "0.0.1",
+  	"engines":{"node": "0.12.x"},
+	"dependencies": {
+		"request" : "2.9.203",
+		"express" : "4.0.0",
+		"serve-index": "*"
+	},
+	"scripts": {
+		"test": "node test.js",
+		"preinstall": "npm install http-server"
+	}
+}
