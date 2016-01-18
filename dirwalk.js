@@ -22,7 +22,10 @@ function writecache(key, list, flat, nested) {
 function dirwalk(opts, path, cb) {
 
 	if (typeof(opts) === "object") {
-		var url          = opts.url.replace(/\/$/,"");
+		// Although default is trailing slash in url and no leading slash
+		// in dirpattern, here we reverse that. For internal processing.
+
+		var url          = opts.url;
 		opts.debug       = opts.debug       || false;
 		opts.debugcache  = opts.debugcache  || false;
 		opts.filepattern = opts.filepattern || "";
@@ -34,10 +37,8 @@ function dirwalk(opts, path, cb) {
 	}
 
 	if (typeof(opts.base) === "undefined") {
-		opts.base = urlp.parse(opts.url).path;
+		opts.base = urlp.parse(opts.url).path.replace(/^\//, "");
 	}
-
-	opts.url = opts.url.replace(/\/$/,"");
 
 	var debug       = opts.debug;
 	var debugcache  = opts.debugcache;
@@ -57,10 +58,11 @@ function dirwalk(opts, path, cb) {
 	}
 
 	if (arguments.length == 2) {
+		if (debug) console.log(id + "dirwalk called with opts = " + JSON.stringify(opts));
 		var cb = path;
 		opts.cb = cb;
 
-		path = "/";
+		path = "";
 		if (cache[key]) {
 			if (cache[key].ready) { // Needed?
 				if (debugcache) console.log(id + "Direct cache hit for " + key)
@@ -107,6 +109,7 @@ function dirwalk(opts, path, cb) {
 			dirwalk[key] = {id: id, flat: {}, list: [], Nr: 0, Nc: 0};
 		}
 	} else {
+		if (debug) console.log(id + "dirwalk called with path = " + path + " and opts = " + JSON.stringify(opts));
 	 	dirwalk[key].Nr = dirwalk[key].Nr + 1; // Number of requests.
 		url = url + path;
 	}
@@ -146,7 +149,6 @@ function dirwalk(opts, path, cb) {
 			
 			if (debug) console.log(id + "Base = " + opts.base + "; Path = " + path);
 
-
 			$(links).each(function(i, link) {
 				href = $(link).attr('href');
 				aclass = $(link).attr('class');
@@ -164,18 +166,22 @@ function dirwalk(opts, path, cb) {
 					if (debug) console.log(id + "  Found Relative path.")
 					if (debug) console.log(id + "  isfile = " + isfile + "; isdir = " + isdir + "; isabs = " + isabs);
 				}
+
 				if (href.match(/^\//) && href.match(/\/$/) && href.match(opts.base)) {
 					// An absolute path if href starts with / and ends with /
 					if (href.match(/\.\./)) {
-						if (debug) console.log(id + "  Found .. in path.  Ignoring.")
+						if (debug) console.log(id + "  Found .. in path.");
+						if (debug) console.log(id + "   Ignoring.");
 						isdir = false;
 					} else {
-						if (href.length > opts.base.length + path.replace(/^\//,"").length) {
+						if (href.length > opts.base.length + path.replace(/^\//, "").length) {
 							isdir = true;
 							isabs = true;
-							href = href.replace(opts.base.replace(/\/$/,"") + path,"");
-							if (debug) console.log(id + "  Found absolute path.  New href = " + href);
-							if (debug) console.log(id + "  isfile = " + isfile + "; isdir = " + isdir + "; isabs = " + isabs);
+							var rep = "/" + opts.base + path;
+							href = href.replace(rep, "");
+							if (debug) console.log(id + "   Path is absolute.");
+							if (debug) console.log(id + "   Removing " + rep + " in href." + " New href = " + href)
+							if (debug) console.log(id + "   isfile = " + isfile + "; isdir = " + isdir + "; isabs = " + isabs);
 						} else {
 							ignore = true;
 							isfile = false;
@@ -196,8 +202,10 @@ function dirwalk(opts, path, cb) {
 						if (href.length > opts.base.length + path.replace(/^\//,"").length) {
 							isfile = true;
 							isabs = true;
-							href = href.replace(opts.base,"/").replace(path,"");
-							if (debug) console.log(id + "   Found absolute file. New href = " + href);
+							var rep = "/" + opts.base + path;
+							href = href.replace(rep, "");
+							if (debug) console.log(id + "   Path is absolute.");
+							if (debug) console.log(id + "   Removing " + rep + " in href." + " New href = " + href)
 							if (debug) console.log(id + "   isfile = " + isfile + "; isdir = " + isdir + "; isabs = " + isabs);
 						} else {
 							ignore = true;
@@ -219,19 +227,20 @@ function dirwalk(opts, path, cb) {
 					isfile = false;
 				}
 
+				// Node express 4.0 serve-index qdirectory listing.
 				if (!ignore && typeof(aclass) === "string") {
 					// Node express 4.0 directory hrefs don't have trailing /
 					// but do indicate directory in class.
 					if (aclass.match("icon-directory")) {
 						if (debug) console.log(id + "   href could be a directory.");
-						if (href === opts.base.replace(/\/$/,"")) {
+						if (href === opts.base.replace(/\/$/, "")) {
 							isdir = false;
 							isfile = false;
 							if (debug) console.log(id + "   href is equal to base.  Ignoring");
 						} else {
 							isdir = true;
 							isfile = false;
-							href = href.replace(opts.base,"/");
+							href = href.replace(/\/$/) + "/";
 							if (debug) console.log(id + "   href is a directory.");
 							if (debug) console.log(id + "   Modified href = " + href);
 						}
@@ -240,11 +249,22 @@ function dirwalk(opts, path, cb) {
 
 				if (isdir) {
 					newpath = path + href;
-					if (debug) {
-						console.log(id + "  Calling dirwalk with path = " + newpath);
-					}
 					dirwalk[key].flat[newpath] = [];
-					dirwalk(opts, newpath, cb);
+
+					if (href !== "") {
+						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
+						dirwalk[key].list.push(path + href);
+						if (debug) {
+							console.log(id + "   Calling dirwalk with path = " + newpath);
+						}
+						dirwalk(opts, newpath, cb);
+					} else {
+						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
+						if (debug) {
+							console.log(id + "   Not calling dirwalk with empty path + href.");
+						}
+					}
+
 				} else if (isfile) {
 					if (!dirwalk[key].flat[path]) {
 						dirwalk[key].flat[path] = [];
@@ -252,9 +272,13 @@ function dirwalk(opts, path, cb) {
 					if (!dirwalk[key].list) {
 						dirwalk[key].list = [];
 					}
-					dirwalk[key].list.push(path + href);
-					//dirwalk[key].list.push(path.replace(/^\//,"") + href);
-					dirwalk[key].flat[path].push(href);						
+					if (href !== "") {
+						if (debug) console.log(id + "   Adding " + path + href + " to dirwalk[" + key + "].list");
+						dirwalk[key].list.push(path + href);
+						dirwalk[key].flat[path].push(href);
+					} else {
+						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
+					}
 				}
 			})
 			if (debug) {
@@ -277,17 +301,7 @@ function dirwalk(opts, path, cb) {
 
 		if (debug) console.log(opts.id + " finish() callback.")
 
-		var nested = {};
-		for (flatkey in flat) {
-			if (flatkey.match(new RegExp(opts.dirpattern))) {
-				stringToObj(flatkey.replace(/^\/|$\//,""), flat[flatkey], nested);
-			} else {
-				delete flat[flatkey];
-			}
-		}
-
-		//writecache(opts.url, list, flat, nested);
-
+		// Needed for async.
 		if (dirwalk[opts.url]) {
 			if (dirwalk[opts.url].onfinish) {
 				while (dirwalk[opts.url].onfinish.length > 0) {
@@ -298,7 +312,23 @@ function dirwalk(opts, path, cb) {
 			}
 		}
 
+		// Reduce flat array and create reduced nested object.
+		var nested = {};
+		for (var flatkey in flat) {
+			if (flatkey.match(new RegExp(opts.dirpattern))) {
+				for (var i = flat[flatkey].length - 1; i >= 0; i--) {
+				    if (!flat[flatkey][i].match(new RegExp(opts.filepattern))) {
+				       flat[flatkey].splice(i, 1);
+				    }
+				}
+				stringToObj(flatkey.replace(/^\/|$\//,""), flat[flatkey], nested);
+			} else {
+				delete flat[flatkey];
+			}
+		}
+
 		if (opts.dirpattern !== "") {
+			// Reduce list array.  See above method to avoid creating copy of list.
 			var listr = [];
 			var kr = 0;
 			var lo = list.length;
@@ -311,6 +341,7 @@ function dirwalk(opts, path, cb) {
 		}
 
 		if (opts.filepattern !== "") {
+			// Reduce list array.
 			var listr = listr || [];
 			var kr = 0;
 			var lo = list.length;

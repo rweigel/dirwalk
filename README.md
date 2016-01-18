@@ -6,10 +6,17 @@
 
 ## Install and Test
 
+Install
 ```
 npm install
+```
+
+Test
+```
+http-server
 npm test
 ```
+
 
 ## Example 
 

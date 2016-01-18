@@ -9,15 +9,27 @@ var dirwalk = require('./dirwalk.js').dirwalk;
 var debug = false;
 var debugcache = true;
 
-var sequential = false;
+var sequential = true;
+if (process.argv[2] === "false") {
+	sequential = false;
+}
+
+var single = 0;
+if (single) {
+	sequential = false;
+	// Wait for server to start.
+	setTimeout(function () {test(single, false);}, 500);
+	return;
+}
+
 console.log("-----------------------------------------------");
-console.log("Running tests with sequential = true in 500 ms.");
+console.log("Running tests with sequential = " + sequential + " in 500 ms.");
 console.log("-----------------------------------------------");
 
 // Wait for server to start.
 setTimeout(runtests, 500);
 
-var Nt = 14; // Number of tests.
+var Nt = 9; // Number of tests.
 
 function finish(status) {
 
@@ -27,7 +39,7 @@ function finish(status) {
 		finish.Nc = 0; // Calls
 	}
 	finish.Nc = finish.Nc + 1;
-	//console.log(Nc)
+
 	if (status) {
 		finish.Np = finish.Np + 1;
 	} else {
@@ -74,14 +86,74 @@ function runtests() {
 
 function test(i) {
 
-	//console.log("Running test " + i);
-
+	// Test Apache.
 	if (i == 1) {
+		if (single) Nt = 1; // Number of tests.
+		var url = "http://mag.gmu.edu/tmp/a/";
+		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
+		dirwalk(opts, function (error, list, flat, nested) {
+			if (list.length == 26) {
+				console.log(i + " PASS " + url)
+				finish(true);
+			} else {
+				console.log(i + " FAIL " + url)
+				finish(false);
+			}
+			if (!single && sequential) {
+				test(i+1);
+			}
+		})
+	}
+
+	// Test http-server
+	if (i == 2) {
+		if (single) Nt = 1; // Number of tests.
+		var url = "http://localhost:8080/tmp/a/";
+		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
+		dirwalk(opts, function (error, list, flat, nested) {
+			if (list.length == 6) {
+				console.log(i + " PASS " + url)
+				finish(true);
+			} else {
+				console.log(i + " FAIL " + url)
+				finish(false);
+			}
+			if (sequential) test(i+1);
+		})
+	}
+
+	// Test Express static file server.
+	if (i == 3) {
+		if (single) Nt = 1; // Number of tests.
+		var url = "http://localhost:3000/tmp/a/";
+		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
+		dirwalk(opts, function (error, list, flat, nested) {
+			if (list.length == 6) {
+				console.log(i + " PASS " + url)
+				finish(true);
+			} else {
+				console.log(i + " FAIL " + url)
+				finish(false);
+			}
+			if (!single && sequential) {
+				test(i+1);
+			}
+		})
+	}
+
+	// Test cache
+	if (i == 4) {
+		if (single) Nt = 3; // Number of tests.
+
 		// Test cache.
 		var url = "http://mag.gmu.edu/tmp/";
 		var opts = {id: "1a", url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 38) {
+			if (list.length == 46) {
 				console.log(opts.id + " PASS " + url);
 				finish(true);
 			} else {
@@ -89,164 +161,61 @@ function test(i) {
 				finish(true);
 			}
 			opts.id = "1b";
+			console.log(opts.id + " url = " + url)
 			dirwalk(opts, function (error, list, flat, nested) {
-				if (list.length == 38) {
+				if (list.length == 46) {
 					console.log(opts.id + " PASS " + url);
 					finish(true);
 				} else {
 					console.log(opts.id + " FAIL " + url);
 					finish(false);
 				}
-				opts.dirpattern = "/a/a1/";
+				opts.dirpattern = "a/a1/";
 				opts.id = "1c";
+				console.log(opts.id + " url = " + url + "; dirpattern = " + opts.dirpattern);
 				dirwalk(opts, function (error, list, flat, nested) {
-					if (list.length == 12) {
+					if (list.length == 15) {
 						console.log(opts.id + " PASS " + url)
 						finish(true);
 					} else {
 						console.log(opts.id + " FAIL " + url)
 						finish(false);
 					}
-					if (sequential) test(i+1);
+					if (!single && sequential) {
+						test(i+1);
+					}
 				})
 			})
 		})
 	}
 
-	if (i == 2) {
-		var url = "http://localhost:3000/tmp/a/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 2) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-	if (i == 3) {
-		// First start http-server from directory containing subdirectory test/.
-		var url = "http://localhost:8080/tmp/a/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 2) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-	if (i == 4) {
-		// First start http-server from directory containing subdirectory test/.
-		var url = "http://localhost:8080/tmp/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 2) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-
-	// Test Apache.
+	// Test Apache + dirpattern.
 	if (i == 5) {
-		var url = "http://mag.gmu.edu/tmp/a/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 22) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-	// Test Apache.
-	if (i == 6) {
+		if (single) Nt = 1; // Number of tests.
 		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 38) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-	// Test Apache.
-	if (i == 7) {
-		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 38) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-
-	// Test API.
-	if (i == 8) {
-		var url = "http://mag.gmu.edu/tmp/a/a1/a11/";
-		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
-		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 4) {
-				console.log(i + " PASS " + url)
-				finish(true);
-			} else {
-				console.log(i + " FAIL " + url)
-				finish(false);
-			}
-			if (sequential) test(i+1);
-		})
-	}
-
-	if (i == 9) {
-		// Test dirpattern.
-		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: i, url: url, dirpattern: "/a/a1/", debug: debug, debugcache: debugcache};
+		var opts = {id: i, url: url, dirpattern: "a/a1/", debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
 			if (error) console.log(error);
-			if (list.length == 12) {
+			if (list.length == 15) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " FAIL " + url)
 				finish(false);
 			}
-			if (sequential) test(i+1);
+			if (!single && sequential) {
+				test(i+1);
+			}
 		})
 	}
 
-	if (i == 10) {
-		// Test filepattern.
+	// Test Apache + filepattern.
+	if (i == 6) {
+		if (single) Nt = 1; // Number of tests.
 		var url = "http://mag.gmu.edu/tmp/";
 		var opts = {id: i, url: url, filepattern: "C=D", debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
 			if (error) console.log(error);
 			if (list.length == 9) {
@@ -256,37 +225,29 @@ function test(i) {
 				console.log(i + " FAIL " + url)
 				finish(false);
 			}
-			if (sequential) test(i+1);
+			if (!single && sequential) {
+				test(i+1);
+			}
 		})
 	}
 
-	if (i == 11) {
-		// Test indirect cache hit.
-		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: "" + i + "a", url: url, dirpattern: "/a/a1/", debug: debug, debugcache: debugcache};
+	// Test Apache + API.
+	if (i == 7) {
+		if (single) Nt = 1; // Number of tests.
+		var url = "http://mag.gmu.edu/tmp/a/a1/a11/";
+		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (error) {
-				console.log(error);
-			}
-			if (list.length == 12) {
-				console.log(i + "a PASS " + url)
+			if (list.length == 4) {
+				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + "a FAIL " + url)
-				console.log(list)
+				console.log(i + " FAIL " + url)
 				finish(false);
 			}
-			bopts = {id: "" + i + "b", url: url, filepattern: "C=D", debug: debug, debugcache: debugcache};
-			dirwalk(bopts, function (error, list, flat, nested) {
-				if (error) console.log(error);
-				if (list.length == 9) {
-					console.log(i + "b PASS " + bopts.url)
-					finish(true);
-				} else {
-					console.log(i + "b FAIL " + bopts.url)
-					finish(false);
-				}
-			})
+			if (!single && sequential) {
+				test(i+1);
+			}
 		})
 	}
 }

@@ -9,7 +9,7 @@
 		"cheerio": "*"
 	},
 	"scripts": {
-		"test": "node test.js",
+		"test": "node test.js true; node test.js false",
 		"preinstall": "npm install http-server"
 	}
 }
