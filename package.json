@@ -1,6 +1,6 @@
 {
 	"name": "dirwalk",
-  	"version": "0.0.2",
+  	"version": "0.0.3",
   	"engines":{"node": "0.12.x"},
 	"dependencies": {
 		"request" : "2.9.203",
@@ -9,7 +9,8 @@
 		"cheerio": "*",
 		"readdirp": "*",
 		"path": "*",
-		"event-stream": "*"
+		"event-stream": "*",
+		"yargs": "*"
 	},
 	"scripts": {
 		"test": "http-server -p 8080; node test.js true; node test.js false",

@@ -6,9 +6,36 @@ var readdirp = require('readdirp')
 var path     = require('path')
 var es       = require('event-stream');
 
-request.debug = true 
+var argv     = require('yargs')
+                .default
+					({
+						'url': "",
+						'dirpattern': "",
+						'filepattern': "",
+						'debug': "",
+						'debugcache': ""
+					})
+					.argv
+
+var options = 
+	{
+		"url": argv.url, 
+		"filepattern": argv.filepattern, 
+		"dirpattern": argv.dirpattern, 
+		"debug": s2b(argv.debug), 
+		"debugcache": s2b(argv.debugcache)
+	};
 
 var cache = {};
+
+dirwalk(options, 
+	function (err, list) {
+		console.log(list);
+	})
+
+function s2b(str) {if (str === "true") {return true} else {return false}}
+function s2i(str) {return parseInt(str)}
+
 
 function getcache(key, cb) {
 	cb("", cache[key].list, cache[key].flat, cache[key].nested);
@@ -133,7 +160,7 @@ function dirwalk(opts, path, cb) {
 			})
 			.on('error', function (err) { console.error('fatal error', err); })
 			.on('end', function () {
-				cb(null,list,flat)
+				finish(opts,list,flat)
 			})
 			.pipe(es.mapSync(function (entry) {
 				//console.log(entry.name)
@@ -364,11 +391,16 @@ function dirwalk(opts, path, cb) {
 
 		// Reduce flat array and create reduced nested object.
 		var nested = {};
+		var filere = new RegExp(opts.filepattern);
+		var dirre = new RegExp(opts.dirpattern);
 		for (var flatkey in flat) {
-			if (flatkey.match(new RegExp(opts.dirpattern))) {
+			if (flatkey.match(dirre)) {
 				for (var i = flat[flatkey].length - 1; i >= 0; i--) {
-				    if (!flat[flatkey][i].match(new RegExp(opts.filepattern))) {
+				    if (!flat[flatkey][i].match(filere)) {
+				       if (debug) console.log("Removing " + flat[flatkey][i])
 				       flat[flatkey].splice(i, 1);
+				    } else {
+				    	if (debug) console.log("Not removing " + flat[flatkey][i])
 				    }
 				}
 				stringToObj(flatkey.replace(/^\/|$\//,""), flat[flatkey], nested);
