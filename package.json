@@ -1,15 +1,18 @@
 {
 	"name": "dirwalk",
-  	"version": "0.0.1",
+  	"version": "0.0.2",
   	"engines":{"node": "0.12.x"},
 	"dependencies": {
 		"request" : "2.9.203",
-		"express" : "4.0.0",
+		"express": "4.0.0",
 		"serve-index": "*",
-		"cheerio": "*"
+		"cheerio": "*",
+		"readdirp": "*",
+		"path": "*",
+		"event-stream": "*"
 	},
 	"scripts": {
-		"test": "node test.js true; node test.js false",
+		"test": "http-server -p 8080; node test.js true; node test.js false",
 		"preinstall": "npm install http-server"
 	}
 }

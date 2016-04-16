@@ -1,8 +1,9 @@
-# Dirwalk - Recursive HTTP directory listing
+# Dirwalk - Recursive HTTP and file system directory listing
 
 - Directory listings are cached in memory.
 - Filters may be applied to directories and files.
 - Tested on Apache 2.2, http-server, and Node Express 4.0 directory listings.
+- Uses https://github.com/thlorenz/readdirp for file system listing.
 
 ## Install and Test
 
@@ -13,28 +14,18 @@ npm install
 
 Test
 ```
-http-server
 npm test
 ```
 
-
 ## Example 
 
-```js
-var dirwalk = require('./dirwalk.js').dirwalk;
+```node dirwalk-example.js```
 
-opts = {url: "http://mag.gmu.edu/tmp/", id: "1", debug: false, debugcache: false};
+## Usage
 
-dirwalk(opts, 
-	function (error, list, flat, nested) {
-		console.log(list);
-	});
 ```
+opts = {url: URL, ["dirpattern": PATTERN, "filepattern": PATTERN]};
 
-Only the paramter `url` is required.  The parameter `id` is used only when one of the debug options is `true`.
-
-See also `test.js` for examples using `filepattern` and `dirpattern` options.
-
-## TODO
-
-If dirpattern is given, need to use to restrict the number of requests.  At present, full directory walk is performed and directory listing filtering is then performed.  This facilitates cache hits, but causes un-needed requests to be made.
+dirwalk(opts, function (error, list, flat, nested) {});
+```
+If `URL` does not start with `http:` or `https`, the file system is walked.

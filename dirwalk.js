@@ -2,6 +2,10 @@ var request = require('request');
 var cheerio = require('cheerio');
 var urlp    = require('url');
 
+var readdirp = require('readdirp')
+var path     = require('path')
+var es       = require('event-stream');
+
 request.debug = true 
 
 var cache = {};
@@ -114,8 +118,51 @@ function dirwalk(opts, path, cb) {
 		url = url + path;
 	}
 
-	if (debug) console.log(id + "Input path: " + path);
-	doget(url, path);
+	if (url.match("http://") || url.match("https://")) {
+		// HTTP walk
+		if (debug) console.log(id + "Input path: " + path);
+		doget(url, path);
+	} else {
+		// Local file system walk
+		var list = [];
+		var flat = {};
+		var stream = readdirp({ root: url, "entryType": "both"});
+		stream
+			.on('warn', function (err) { 
+				console.error('non-fatal error', err); 
+			})
+			.on('error', function (err) { console.error('fatal error', err); })
+			.on('end', function () {
+				cb(null,list,flat)
+			})
+			.pipe(es.mapSync(function (entry) {
+				//console.log(entry.name)
+				//console.log(entry.path)
+				if (entry.name === entry.path) {
+					list.push(entry.path + "/");
+				} else {
+					list.push(entry.path);
+				}
+				//console.log(flat)
+				//console.log(entry)
+				pDir = ""
+				if (entry.parentDir !== "") {
+					var pDir = entry.parentDir + "/"
+				}
+				 //&& entry.parentDir !== ""
+				if (typeof(flat[pDir]) === "undefined") {
+					flat[pDir] = []
+				}
+				var ent = entry.path;
+				var re = new RegExp("^" + pDir);
+				ent = ent.replace(re,"")
+				flat[pDir].push(ent)
+				//return { path: entry.path, size: entry.stat.size };
+			}))
+			// TODO: Modify http code so it does streaming too.
+			//.pipe(es.stringify())
+			//.pipe(process.stdout);
+	}
 
 	function doget(url, path) {
 		var request = require("request");
@@ -246,14 +293,17 @@ function dirwalk(opts, path, cb) {
 						}
 					}
 				}
-
+				if (typeof(dirwalk[key].flat[path]) === "undefined") {
+						dirwalk[key].flat[path] = [];
+				}
 				if (isdir) {
 					newpath = path + href;
-					dirwalk[key].flat[newpath] = [];
 
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
+						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].flat["+newpath+"]");
+						dirwalk[key].flat[path].push(path + href);
 						if (debug) {
 							console.log(id + "   Calling dirwalk with path = " + newpath);
 						}
@@ -266,9 +316,6 @@ function dirwalk(opts, path, cb) {
 					}
 
 				} else if (isfile) {
-					if (!dirwalk[key].flat[path]) {
-						dirwalk[key].flat[path] = [];
-					}
 					if (!dirwalk[key].list) {
 						dirwalk[key].list = [];
 					}
@@ -306,7 +353,10 @@ function dirwalk(opts, path, cb) {
 			if (dirwalk[opts.url].onfinish) {
 				while (dirwalk[opts.url].onfinish.length > 0) {
 					copts = dirwalk[opts.url].onfinish.shift();
-					if (debug) console.log(opts.id + " Found URL callback for " + copts.id + ".");
+					if (debug) {
+						console.log(opts.id +
+							 " Found URL callback for " + copts.id + ".");
+					}
 					finish(copts, list, flat);
 				}
 			}

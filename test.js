@@ -1,3 +1,16 @@
+// Run tests in parallel
+//   node test.js true
+// Run tests serially
+//   node test.js false
+// Run a single test
+//   node test.js true|false N
+
+// TODO: Write tests for flat and nested.
+
+// TODO: This needs to be modified each time a test is added.
+var Nt = 9; // Number of tests.
+var Ntt = 12; // Number of tests including subtests.
+
 var express = require('express');
 var app = express();
 var serveIndex = require('serve-index')
@@ -7,7 +20,7 @@ app.listen(3000);
 var dirwalk = require('./dirwalk.js').dirwalk;
 
 var debug = false;
-var debugcache = true;
+var debugcache = false;
 
 var sequential = true;
 if (process.argv[2] === "false") {
@@ -15,6 +28,10 @@ if (process.argv[2] === "false") {
 }
 
 var single = 0;
+if (process.argv[3]) {
+	single = parseInt(process.argv[3]);
+}
+
 if (single) {
 	sequential = false;
 	// Wait for server to start.
@@ -29,7 +46,6 @@ console.log("-----------------------------------------------");
 // Wait for server to start.
 setTimeout(runtests, 500);
 
-var Nt = 9; // Number of tests.
 
 function finish(status) {
 
@@ -40,6 +56,7 @@ function finish(status) {
 	}
 	finish.Nc = finish.Nc + 1;
 
+	console.log(finish.Nc)
 	if (status) {
 		finish.Np = finish.Np + 1;
 	} else {
@@ -78,7 +95,7 @@ function runtests() {
 	if (sequential) {
 		test(1, sequential);
 	} else {
-		for (var i = 1;i < 12;i++) {
+		for (var i = 1;i < Ntt+1;i++) {
 			test(i, sequential);
 		}
 	}
@@ -97,7 +114,7 @@ function test(i) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -113,14 +130,19 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 6) {
+			if (debug) {
+				console.log(list)
+			}
+			if (list.length == 2) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
-			if (sequential) test(i+1);
+			if (!single && sequential) {
+				test(i+1);
+			}
 		})
 	}
 
@@ -131,11 +153,11 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 6) {
+			if (list.length == 2) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -157,7 +179,7 @@ function test(i) {
 				console.log(opts.id + " PASS " + url);
 				finish(true);
 			} else {
-				console.log(opts.id + " FAIL " + url);
+				console.log(opts.id + " ?FAIL? " + url);
 				finish(true);
 			}
 			opts.id = "1b";
@@ -167,7 +189,7 @@ function test(i) {
 					console.log(opts.id + " PASS " + url);
 					finish(true);
 				} else {
-					console.log(opts.id + " FAIL " + url);
+					console.log(opts.id + " ?FAIL? " + url);
 					finish(false);
 				}
 				opts.dirpattern = "a/a1/";
@@ -178,7 +200,7 @@ function test(i) {
 						console.log(opts.id + " PASS " + url)
 						finish(true);
 					} else {
-						console.log(opts.id + " FAIL " + url)
+						console.log(opts.id + " ?FAIL? " + url)
 						finish(false);
 					}
 					if (!single && sequential) {
@@ -201,7 +223,7 @@ function test(i) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -222,7 +244,7 @@ function test(i) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -242,7 +264,7 @@ function test(i) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
-				console.log(i + " FAIL " + url)
+				console.log(i + " ?FAIL? " + url)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -250,6 +272,32 @@ function test(i) {
 			}
 		})
 	}
+	// Test file system
+	if (i == 8) {
+		if (single) Nt = 1; // Number of tests.
+		var url = "./tmp/a/";
+		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
+		console.log(opts.id + " url = " + url)
+		dirwalk(opts, function (error, list, flat, nested) {
+			console.log(list)
+			if (debug) {
+				console.log(list)
+			}
+			if (list.length == 2) {
+				console.log(i + " PASS " + url)
+				finish(true);
+			} else {
+				console.log(i + " ?FAIL? " + url)
+				finish(false);
+			}
+
+			if (!single && sequential) {
+				return;
+				//test(i+1);
+			}
+		})
+	}
+
 }
 
 // Test API.
@@ -259,7 +307,7 @@ if (0) {
 		if (list.length == 4) {
 			console.log(i + " PASS " + url);
 		} else {
-			console.log(i + " FAIL " + url);
+			console.log(i + " ?FAIL? " + url);
 		}
 		if (sequential) test(i+1);
 	})
