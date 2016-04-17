@@ -5,6 +5,10 @@
 // Run a single test
 //   node test.js true|false N
 
+// Start server for local testing.
+httpServer = require('http-server');
+var server = httpServer.createServer().listen(8080);
+
 // TODO: Write tests for flat and nested.
 
 // TODO: This needs to be modified each time a test is added.
@@ -56,7 +60,6 @@ function finish(status) {
 	}
 	finish.Nc = finish.Nc + 1;
 
-	console.log(finish.Nc)
 	if (status) {
 		finish.Np = finish.Np + 1;
 	} else {
