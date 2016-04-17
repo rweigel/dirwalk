@@ -12,7 +12,7 @@ var fs = require('fs');
 
 var cache = {};
 
-if (0) {
+if (1) {
 if (process.argv[1].slice(-10) === "dirwalk.js") {
 
 	function s2b(str) {if (str === "true") {return true} else {return false}}
@@ -43,7 +43,7 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 	if (options.url !== "") {
 		dirwalk(options, 
 			function (err, list) {
-				console.log(list);
+				console.log(JSON.stringify(list));
 			})
 	}
 
@@ -87,15 +87,13 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 }
 
 function getcache(key, cb) {
-	cb("", cache[key].list, cache[key].flat, cache[key].nested);
+	cb("", cache[key].list);
 }
 
-function writecache(key, list, flat, nested) {
+function writecache(key, list) {
 	cache[key] = {};
 	cache[key].ready  = false;
 	cache[key].list   = list;
-	cache[key].flat   = flat;
-	cache[key].nested = nested;
 	cache[key].ready  = true;
 }
 
@@ -146,14 +144,14 @@ function dirwalk(opts, path, cb) {
 		if (cache[key]) {
 			if (cache[key].ready) { // Needed?
 				if (debugcache) console.log(id + "Direct cache hit for " + key)
-				cb("", cache[key].list, cache[key].flat, cache[key].nested);
+				cb("", cache[key].list);
 				return;
 			}
 		}
 		if (cache[url]) {
 			if (cache[url].ready) { // Needed?
 				if (debugcache) console.log(id + "Indirect cache hit for " + key);
-				finish(opts, cache[url].list, cache[url].flat);
+				finish(opts, cache[url].list);
 				return;			
 			}
 		}
@@ -171,7 +169,7 @@ function dirwalk(opts, path, cb) {
 				}
 				return;
 			} else {
-				dirwalk[url] = {id: id, flat: {}, list: [], Nr: 0, Nc: 0};
+				dirwalk[url] = {id: id, list: [], Nr: 0, Nc: 0};
 			}
 		}
 		if (typeof(dirwalk[key]) === "object") {
@@ -186,7 +184,7 @@ function dirwalk(opts, path, cb) {
 			}
 			return;
 		} else {
-			dirwalk[key] = {id: id, flat: {}, list: [], Nr: 0, Nc: 0};
+			dirwalk[key] = {id: id, list: [], Nr: 0, Nc: 0};
 		}
 	} else {
 		if (debug) console.log(id + "dirwalk called with path = " + path + " and opts = " + JSON.stringify(opts));
@@ -201,7 +199,6 @@ function dirwalk(opts, path, cb) {
 	} else {
 		// Local file system walk
 		var list = [];
-		var flat = {};
 		var stream = readdirp({ root: url, "entryType": "both"});
 		stream
 			.on('warn', function (err) { 
@@ -209,7 +206,7 @@ function dirwalk(opts, path, cb) {
 			})
 			.on('error', function (err) { console.error('fatal error', err); })
 			.on('end', function () {
-				finish(opts,list,flat)
+				finish(opts,list)
 			})
 			.pipe(es.mapSync(function (entry) {
 				var isdir = fs.lstatSync(url + entry.path).isDirectory();
@@ -224,13 +221,7 @@ function dirwalk(opts, path, cb) {
 					console.log("is dir  " + isdir);
 				}
 				//console.log(entry)
-
-				if (typeof(flat[entry.parentDir]) === "undefined") {
-					flat[entry.parentDir] = []
-				}
 				list.push(entry.path+tail);
-				entry.path = entry.path.replace(entry.parentDir+"/","")
-				flat[entry.parentDir].push(entry.path+tail)
 			}))
 			// TODO: Modify http code so it does streaming too.
 			//.pipe(es.stringify())
@@ -247,7 +238,6 @@ function dirwalk(opts, path, cb) {
 			if (error) {
 				if (debug) console.log(error);
 				console.log(url + " " + path);
-				dirwalk[key].flat[path] = error;
 		    	dirwalk[key].Nc = dirwalk[key].Nc + 1;
 				return;
 			}
@@ -367,17 +357,13 @@ function dirwalk(opts, path, cb) {
 						}
 					}
 				}
-				if (typeof(dirwalk[key].flat[pathr]) === "undefined") {
-						dirwalk[key].flat[pathr] = [];
-				}
+
 				if (isdir) {
 					newpath = path + href;
 
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
-						if (debug) console.log(id + "   Adding " + href + " to dirwalk[" + key + "].flat["+pathr+"]");
-						dirwalk[key].flat[pathr].push(href);
 						if (debug) {
 							console.log(id + "   Calling dirwalk with path = " + newpath);
 						}
@@ -396,8 +382,6 @@ function dirwalk(opts, path, cb) {
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + path + href + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
-						if (debug) console.log(id + "   Adding " + href + " to dirwalk[" + key + "].flat["+path+"]");
-						dirwalk[key].flat[pathr].push(href);
 					} else {
 						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
 					}
@@ -408,14 +392,14 @@ function dirwalk(opts, path, cb) {
 								+ response.request.uri.href);
 			}
 			if (dirwalk[key].Nr == dirwalk[key].Nc) {
-				finish(opts, dirwalk[key].list, dirwalk[key].flat);
+				finish(opts, dirwalk[key].list);
 			}
 	    	dirwalk[key].Nc = dirwalk[key].Nc + 1;
 
 		})
 	}
 
-	function finish(opts, list, flat) {
+	function finish(opts, list) {
 
 		if (opts.cb) {
 			var cb = opts.cb;
@@ -432,28 +416,8 @@ function dirwalk(opts, path, cb) {
 						console.log(opts.id +
 							 " Found URL callback for " + copts.id + ".");
 					}
-					finish(copts, list, flat);
+					finish(copts, list);
 				}
-			}
-		}
-
-		// Reduce flat array and create reduced nested object.
-		var nested = {};
-		var filere = new RegExp(opts.filepattern);
-		var dirre = new RegExp(opts.dirpattern);
-		for (var flatkey in flat) {
-			if (flatkey.match(dirre)) {
-				for (var i = flat[flatkey].length - 1; i >= 0; i--) {
-				    if (!flat[flatkey][i].match(filere)) {
-				       if (debug) console.log("Removing " + flat[flatkey][i])
-				       flat[flatkey].splice(i, 1);
-				    } else {
-				    	if (debug) console.log("Not removing " + flat[flatkey][i])
-				    }
-				}
-				stringToObj(flatkey.replace(/^\/|$\//,""), flat[flatkey], nested);
-			} else {
-				delete flat[flatkey];
 			}
 		}
 
@@ -485,12 +449,12 @@ function dirwalk(opts, path, cb) {
 
 		if (typeof(listr) === "undefined") {
 			list.sort();
-			writecache(opts.key, list, flat, nested);
-			cb("", list, flat, nested);
+			writecache(opts.key, list);
+			cb("", list);
 		} else {
 			listr.sort();
-			writecache(opts.key, listr, flat, nested);
-			cb("", listr, flat, nested);
+			writecache(opts.key, listr);
+			cb("", listr);
 		}
 
 		if (dirwalk[opts.key]) {
@@ -498,25 +462,11 @@ function dirwalk(opts, path, cb) {
 				while (dirwalk[opts.key].onfinish.length > 0) {
 					copts = dirwalk[opts.key].onfinish.shift();
 					console.log(opts.id + " Found key callback for " + copts.id + ".");
-					finish(copts, list, flat);
+					finish(copts, list);
 				}
 			}
 		}
 
-	}
-
-	//http://stackoverflow.com/questions/22985676/convert-string-with-dot-notation-to-json
-	stringToObj = function(path, value, obj) {
-		var parts = path.split("/");
-		var part;
-		var last = parts.pop();
-		while (part = parts.shift()) {
-			if (typeof obj[part] != "object") {
-				obj[part] = {};
-			}
-			obj = obj[part];
-		}
-		obj[last] = value;
 	}
 }
 exports.dirwalk = dirwalk

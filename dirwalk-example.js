@@ -14,6 +14,9 @@ N = N + 1;
 dirwalk({url: "./tmp/", debug: false}, cb);
 
 //N = N + 1;
+//dirwalk({url: "http://mag.gmu.edu/git/dirwalk/tmp/", debug: false}, cb);
+
+//N = N + 1;
 //dirwalk({url: "http://localhost:8080/tmp/a/"}, cb);
 
 //N = N + 1;
@@ -29,8 +32,10 @@ function cb(error, list, flat, nested) {
 	cb.Nc = cb.Nc + 1;
 	if (cb.Nc == N+1) {
 		console.log("lists match: " + _.isEqual(cb.lists[0], cb.lists[1]));
+		//console.log("lists match: " + _.isEqual(cb.lists[0], cb.lists[2]));
 		console.log(JSON.stringify(cb.lists[0]))
 		console.log(JSON.stringify(cb.lists[1]))
+		//console.log(JSON.stringify(cb.lists[2]))
 		process.exit(0);
 	}
 }
