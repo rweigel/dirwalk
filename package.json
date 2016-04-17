@@ -10,7 +10,8 @@
 		"readdirp": "*",
 		"path": "*",
 		"event-stream": "*",
-		"yargs": "*"
+		"yargs": "*",
+		"dirwalk": "https://github.com/rweigel/dirwalk/tarball/master"
 	},
 	"scripts": {
 		"test": "http-server -p 8080; node test.js true; node test.js false",

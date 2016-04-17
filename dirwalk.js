@@ -1,4 +1,6 @@
 var request = require('request');
+var express = require('express');
+var app     = express();
 var cheerio = require('cheerio');
 var urlp    = require('url');
 
@@ -13,9 +15,12 @@ var argv     = require('yargs')
 						'dirpattern': "",
 						'filepattern': "",
 						'debug': "",
-						'debugcache': ""
+						'debugcache': "",
+						'port': "8006"
 					})
 					.argv
+
+var port = argv.port;
 
 var options = 
 	{
@@ -28,14 +33,47 @@ var options =
 
 var cache = {};
 
-dirwalk(options, 
-	function (err, list) {
-		console.log(list);
-	})
-
 function s2b(str) {if (str === "true") {return true} else {return false}}
 function s2i(str) {return parseInt(str)}
+function ds() {return (new Date()).toISOString() + " [dirwalk] "}
 
+if (options.url !== "") {
+	dirwalk(options, 
+		function (err, list) {
+			console.log(list);
+		})
+} else {
+	app.listen(port)
+	console.log(ds() + "Listening on port " + port + ".");
+
+	// Main entry route
+	app.get('/', function (req, res) {
+		if (Object.keys(req.query).length === 0) {
+			// If no query parameters, return index.htm
+			res.contentType("html")
+			res.send(fs.readFileSync(__dirname+"/index.htm"))
+		} else {
+			// Call main entry function
+			var addr = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+			if (req.originalUrl.toString().indexOf("istest=true") == -1) {
+				console.log(ds() + "Request from " + addr + ": " + req.originalUrl)
+			}
+		}
+		var options = {}
+
+		options.url         = decodeURIComponent(req.query.url);
+		options.filepattern = req.query.filepattern || "";
+		options.dirpattern  = req.query.dirpattern  || "";
+		options.debug       = req.query.debug       || false;
+		options.debugcache  = req.query.debugcache  || false;
+
+		dirwalk(options, 
+			function (err, list) {
+				res.send(list);
+			})
+
+	})
+}
 
 function getcache(key, cb) {
 	cb("", cache[key].list, cache[key].flat, cache[key].nested);
