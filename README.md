@@ -1,4 +1,4 @@
-# Dirwalk - Recursive HTTP and file system directory listing
+## Dirwalk - Recursive HTTP and file system directory listing
 
 - Directory listings are cached in memory.
 - Filters may be applied to directories and files.
@@ -29,6 +29,5 @@ npm test
 ## Examples
 
 ```
-node_modules/http-server/bin/http-server -p 8080
 node dirwalk-example.js
 ```
