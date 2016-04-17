@@ -10,29 +10,23 @@
 ```javascript
 opts = {url: URL, ["dirpattern": PATTERN, "filepattern": PATTERN]};
 
-dirwalk(opts, function (error, list, flat, nested) {});
+dirwalk(opts, function (error, list) {});
 ```
 
 If `URL` does not start with `http` or `https`, the file system is walked.
 
-Example
+Example in dirwalk-example.js
 
 ```javascript
-dirwalk({url: "./tmp/"}, 
-	function (err,list,flat,nested) {
-		console.log(list);
-		console.log(flat);
-	})
+dirwalk({url: "./tmp/"}, function (err,list) {console.log(list);})
+dirwalk({url: "http://localhost:8080/tmp/"}, function (err,list) {console.log(list);})
 ```
-
 returns
 
 ```javascript
-[ 'a/', 'a/file1', 'a/file2', 'b/', 'b/file3', 'b/file4', 'file0/' ]
+["a/","a/aa/","a/aa/fileaa1","a/aa/fileaa2","a/filea1","a/filea2","b/","b/fileb","fileroot"]
 
-{ '': [ 'a', 'b', 'file0' ],
-  'a/': [ 'file1', 'file2' ],
-  'b/': [ 'file3', 'file4' ] }
+["a/","a/aa/","a/aa/fileaa1","a/aa/fileaa2","a/filea1","a/filea2","b/","b/fileb","fileroot"]
 ```
 
 ## Install

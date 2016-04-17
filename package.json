@@ -12,6 +12,7 @@
 		"event-stream": "*",
 		"yargs": "*",
 		"http-server":"*",
+		"lodash":"*",
 		"dirwalk": "https://github.com/rweigel/dirwalk/tarball/master"
 	},
 	"scripts": {

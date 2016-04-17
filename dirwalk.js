@@ -8,6 +8,8 @@ var readdirp = require('readdirp')
 var path     = require('path')
 var es       = require('event-stream');
 
+var fs = require('fs');
+
 var cache = {};
 
 if (0) {
@@ -210,28 +212,25 @@ function dirwalk(opts, path, cb) {
 				finish(opts,list,flat)
 			})
 			.pipe(es.mapSync(function (entry) {
-				//console.log(entry.name)
-				//console.log(entry.path)
-				if (entry.name === entry.path) {
-					list.push(entry.path + "/");
-				} else {
-					list.push(entry.path);
+				var isdir = fs.lstatSync(url + entry.path).isDirectory();
+				tail = "";
+				if (isdir) {
+					var tail = "/";
 				}
-				//console.log(flat)
+				if (0) {
+					console.log("name:   " + entry.name)
+					console.log("path:   " + entry.path)
+					console.log("parent: " + entry.parentDir)
+					console.log("is dir  " + isdir);
+				}
 				//console.log(entry)
-				pDir = ""
-				if (entry.parentDir !== "") {
-					var pDir = entry.parentDir + "/"
+
+				if (typeof(flat[entry.parentDir]) === "undefined") {
+					flat[entry.parentDir] = []
 				}
-				 //&& entry.parentDir !== ""
-				if (typeof(flat[pDir]) === "undefined") {
-					flat[pDir] = []
-				}
-				var ent = entry.path;
-				var re = new RegExp("^" + pDir);
-				ent = ent.replace(re,"")
-				flat[pDir].push(ent)
-				//return { path: entry.path, size: entry.stat.size };
+				list.push(entry.path+tail);
+				entry.path = entry.path.replace(entry.parentDir+"/","")
+				flat[entry.parentDir].push(entry.path+tail)
 			}))
 			// TODO: Modify http code so it does streaming too.
 			//.pipe(es.stringify())
@@ -242,6 +241,7 @@ function dirwalk(opts, path, cb) {
 		var request = require("request");
 		var getopts = {method: 'GET', uri: url, gzip: true, pool: {maxSockets: 5}};
 		if (debug) console.log(id + "Requesting " + url);
+		var pathr = path.replace(/\/$/,"")
 		request.get(getopts, function (error, response, body) {
 
 			if (error) {
@@ -367,8 +367,8 @@ function dirwalk(opts, path, cb) {
 						}
 					}
 				}
-				if (typeof(dirwalk[key].flat[path]) === "undefined") {
-						dirwalk[key].flat[path] = [];
+				if (typeof(dirwalk[key].flat[pathr]) === "undefined") {
+						dirwalk[key].flat[pathr] = [];
 				}
 				if (isdir) {
 					newpath = path + href;
@@ -376,8 +376,8 @@ function dirwalk(opts, path, cb) {
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
-						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].flat["+newpath+"]");
-						dirwalk[key].flat[path].push(path + href);
+						if (debug) console.log(id + "   Adding " + href + " to dirwalk[" + key + "].flat["+pathr+"]");
+						dirwalk[key].flat[pathr].push(href);
 						if (debug) {
 							console.log(id + "   Calling dirwalk with path = " + newpath);
 						}
@@ -396,7 +396,8 @@ function dirwalk(opts, path, cb) {
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + path + href + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
-						dirwalk[key].flat[path].push(href);
+						if (debug) console.log(id + "   Adding " + href + " to dirwalk[" + key + "].flat["+path+"]");
+						dirwalk[key].flat[pathr].push(href);
 					} else {
 						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
 					}
