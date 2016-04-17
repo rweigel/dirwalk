@@ -11,10 +11,11 @@
 		"path": "*",
 		"event-stream": "*",
 		"yargs": "*",
+		"http-server":"*",
 		"dirwalk": "https://github.com/rweigel/dirwalk/tarball/master"
 	},
 	"scripts": {
-		"test": "http-server -p 8080; node test.js true; node test.js false",
+		"test": "node test.js true; node test.js false",
 		"preinstall": "npm install http-server"
 	}
 }

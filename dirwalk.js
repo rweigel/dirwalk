@@ -8,71 +8,80 @@ var readdirp = require('readdirp')
 var path     = require('path')
 var es       = require('event-stream');
 
-var argv     = require('yargs')
-                .default
-					({
-						'url': "",
-						'dirpattern': "",
-						'filepattern': "",
-						'debug': "",
-						'debugcache': "",
-						'port': "8006"
-					})
-					.argv
-
-var port = argv.port;
-
-var options = 
-	{
-		"url": argv.url, 
-		"filepattern": argv.filepattern, 
-		"dirpattern": argv.dirpattern, 
-		"debug": s2b(argv.debug), 
-		"debugcache": s2b(argv.debugcache)
-	};
-
 var cache = {};
 
-function s2b(str) {if (str === "true") {return true} else {return false}}
-function s2i(str) {return parseInt(str)}
-function ds() {return (new Date()).toISOString() + " [dirwalk] "}
+if (0) {
+if (process.argv[1].slice(-10) === "dirwalk.js") {
 
-if (options.url !== "") {
-	dirwalk(options, 
-		function (err, list) {
-			console.log(list);
-		})
-} else {
-	app.listen(port)
-	console.log(ds() + "Listening on port " + port + ".");
+	function s2b(str) {if (str === "true") {return true} else {return false}}
+	function s2i(str) {return parseInt(str)}
+	function ds() {return (new Date()).toISOString() + " [dirwalk] "}
 
-	// Main entry route
-	app.get('/', function (req, res) {
-		if (Object.keys(req.query).length === 0) {
-			// If no query parameters, return index.htm
-			res.contentType("html")
-			res.send(fs.readFileSync(__dirname+"/index.htm"))
-		} else {
-			// Call main entry function
-			var addr = req.headers['x-forwarded-for'] || req.connection.remoteAddress
-			if (req.originalUrl.toString().indexOf("istest=true") == -1) {
-				console.log(ds() + "Request from " + addr + ": " + req.originalUrl)
-			}
-		}
-		var options = {}
+	var argv     = require('yargs')
+	                .default
+						({
+							'url': "",
+							'dirpattern': "",
+							'filepattern': "",
+							'debug': "",
+							'debugcache': "",
+							'port': ""
+						})
+						.argv
 
-		options.url         = decodeURIComponent(req.query.url);
-		options.filepattern = req.query.filepattern || "";
-		options.dirpattern  = req.query.dirpattern  || "";
-		options.debug       = req.query.debug       || false;
-		options.debugcache  = req.query.debugcache  || false;
+	var options = 
+		{
+			"url": argv.url, 
+			"filepattern": argv.filepattern, 
+			"dirpattern": argv.dirpattern, 
+			"debug": s2b(argv.debug), 
+			"debugcache": s2b(argv.debugcache)
+		};
 
+	if (options.url !== "") {
 		dirwalk(options, 
 			function (err, list) {
-				res.send(list);
+				console.log(list);
 			})
+	}
 
-	})
+	var port = argv.port;
+
+	// Only start server if port given
+	if (port !== "") {
+
+		app.listen(port)
+		console.log(ds() + "Listening on port " + port + ".");
+
+		// Main entry route
+		app.get('/', function (req, res) {
+			if (Object.keys(req.query).length === 0) {
+				// If no query parameters, return index.htm
+				res.contentType("html")
+				res.send(fs.readFileSync(__dirname+"/index.htm"))
+			} else {
+				// Call main entry function
+				var addr = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+				if (req.originalUrl.toString().indexOf("istest=true") == -1) {
+					console.log(ds() + "Request from " + addr + ": " + req.originalUrl)
+				}
+			}
+			var options = {}
+
+			options.url         = decodeURIComponent(req.query.url);
+			options.filepattern = req.query.filepattern || "";
+			options.dirpattern  = req.query.dirpattern  || "";
+			options.debug       = req.query.debug       || false;
+			options.debugcache  = req.query.debugcache  || false;
+
+			dirwalk(options, 
+				function (err, list) {
+					res.send(list);
+				})
+
+		})
+	}
+}
 }
 
 function getcache(key, cb) {
