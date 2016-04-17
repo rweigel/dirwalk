@@ -1,14 +1,19 @@
-## Dirwalk - Recursive HTTP and file system directory listing
+## Dirwalk - Recursive HTTP and file system directory listing with caching
 
 - Directory listings are cached in memory.
 - Filters can be applied to directories and files.
 - Tested on Apache 2.2, http-server, and Node Express 4.0 directory listings.
 - Uses https://github.com/thlorenz/readdirp for file system listing.
 
+## TODO:
+- Change cache = {} to dirwalk.cache = {}
+- Allow usecache = false
+- Save cache object on exit
+
 ## Usage
 
 ```javascript
-opts = {url: URL, ["dirpattern": PATTERN, "filepattern": PATTERN]};
+opts = {url: URL, ["dirpattern": REGEXP, "filepattern": REGEXP]};
 
 dirwalk(opts, function (error, list) {});
 ```
@@ -26,6 +31,9 @@ npm test
 
 ```javascript
 dirwalk({url: "./tmp/"}, function (err,list) {console.log(list);})
+```
+
+```javascript
 dirwalk({url: "http://localhost:8080/tmp/"}, function (err,list) {console.log(list);})
 ```
 

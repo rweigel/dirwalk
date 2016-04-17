@@ -11,6 +11,9 @@ var server = httpServer.createServer().listen(8080);
 
 // TODO: Write tests for flat and nested.
 
+var debug = false;
+var debugcache = true;
+
 // TODO: This needs to be modified each time a test is added.
 var Nt = 9; // Number of tests.
 var Ntt = 12; // Number of tests including subtests.
@@ -22,9 +25,6 @@ app.use('/tmp', serveIndex('tmp/', {'icons': true}))
 app.listen(3000);
 
 var dirwalk = require('./dirwalk.js').dirwalk;
-
-var debug = false;
-var debugcache = false;
 
 var sequential = true;
 if (process.argv[2] === "false") {
@@ -109,15 +109,16 @@ function test(i) {
 	// Test Apache.
 	if (i == 1) {
 		if (single) Nt = 1; // Number of tests.
-		var url = "http://mag.gmu.edu/tmp/a/";
+		var url = "http://mag.gmu.edu/git/dirwalk/tmp/a/";
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 26) {
+			if (list.length == 5) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -136,11 +137,12 @@ function test(i) {
 			if (debug) {
 				console.log(list)
 			}
-			if (list.length == 2) {
+			if (list.length == 5) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -156,11 +158,12 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 2) {
+			if (list.length == 5) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -174,36 +177,39 @@ function test(i) {
 		if (single) Nt = 3; // Number of tests.
 
 		// Test cache.
-		var url = "http://mag.gmu.edu/tmp/";
+		var url = "http://mag.gmu.edu/git/dirwalk/tmp/";
 		var opts = {id: "1a", url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 46) {
+			if (list.length == 9) {
 				console.log(opts.id + " PASS " + url);
 				finish(true);
 			} else {
 				console.log(opts.id + " ?FAIL? " + url);
+				console.log(list)
 				finish(true);
 			}
 			opts.id = "1b";
 			console.log(opts.id + " url = " + url)
 			dirwalk(opts, function (error, list, flat, nested) {
-				if (list.length == 46) {
+				if (list.length == 9) {
 					console.log(opts.id + " PASS " + url);
 					finish(true);
 				} else {
 					console.log(opts.id + " ?FAIL? " + url);
+					console.log(list)
 					finish(false);
 				}
-				opts.dirpattern = "a/a1/";
+				opts.dirpattern = "a/aa/";
 				opts.id = "1c";
 				console.log(opts.id + " url = " + url + "; dirpattern = " + opts.dirpattern);
 				dirwalk(opts, function (error, list, flat, nested) {
-					if (list.length == 15) {
+					if (list.length == 3) {
 						console.log(opts.id + " PASS " + url)
 						finish(true);
 					} else {
 						console.log(opts.id + " ?FAIL? " + url)
+						console.log(list)
 						finish(false);
 					}
 					if (!single && sequential) {
@@ -217,16 +223,17 @@ function test(i) {
 	// Test Apache + dirpattern.
 	if (i == 5) {
 		if (single) Nt = 1; // Number of tests.
-		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: i, url: url, dirpattern: "a/a1/", debug: debug, debugcache: debugcache};
+		var url = "http://mag.gmu.edu/git/dirwalk/tmp/";
+		var opts = {id: i, url: url, dirpattern: "a/aa/", debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
 			if (error) console.log(error);
-			if (list.length == 15) {
+			if (list.length == 3) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -238,16 +245,17 @@ function test(i) {
 	// Test Apache + filepattern.
 	if (i == 6) {
 		if (single) Nt = 1; // Number of tests.
-		var url = "http://mag.gmu.edu/tmp/";
-		var opts = {id: i, url: url, filepattern: "C=D", debug: debug, debugcache: debugcache};
+		var url = "http://mag.gmu.edu/git/dirwalk/tmp/";
+		var opts = {id: i, url: url, filepattern: "fileroot", debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
 			if (error) console.log(error);
-			if (list.length == 9) {
+			if (list.length == 1) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -259,15 +267,16 @@ function test(i) {
 	// Test Apache + API.
 	if (i == 7) {
 		if (single) Nt = 1; // Number of tests.
-		var url = "http://mag.gmu.edu/tmp/a/a1/a11/";
+		var url = "http://mag.gmu.edu/git/dirwalk/tmp/b/";
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 4) {
+			if (list.length == 1) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 			if (!single && sequential) {
@@ -286,11 +295,12 @@ function test(i) {
 			if (debug) {
 				console.log(list)
 			}
-			if (list.length == 2) {
+			if (list.length == 5) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
 				console.log(i + " ?FAIL? " + url)
+				console.log(list)
 				finish(false);
 			}
 
@@ -305,7 +315,7 @@ function test(i) {
 
 // Test API.
 if (0) {
-	var url = "http://mag.gmu.edu/tmp/a/a1/a11/";
+	var url = "http://mag.gmu.edu/git/dirwalk/tmp/a/a1/a11/";
 	dirwalk(url, function (error, list, flat, nested) {
 		if (list.length == 4) {
 			console.log(i + " PASS " + url);

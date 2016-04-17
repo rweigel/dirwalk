@@ -10,13 +10,11 @@ var es       = require('event-stream');
 
 var fs = require('fs');
 
-var cache = {};
+function s2b(str) {if (str === "true") {return true} else {return false}}
+function s2i(str) {return parseInt(str)}
 
-if (1) {
 if (process.argv[1].slice(-10) === "dirwalk.js") {
 
-	function s2b(str) {if (str === "true") {return true} else {return false}}
-	function s2i(str) {return parseInt(str)}
 	function ds() {return (new Date()).toISOString() + " [dirwalk] "}
 
 	var argv     = require('yargs')
@@ -25,8 +23,9 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 							'url': "",
 							'dirpattern': "",
 							'filepattern': "",
-							'debug': "",
-							'debugcache': "",
+							'usecache': "true",
+							'debug': "false",
+							'debugcache': "false",
 							'port': ""
 						})
 						.argv
@@ -36,6 +35,7 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 			"url": argv.url, 
 			"filepattern": argv.filepattern, 
 			"dirpattern": argv.dirpattern, 
+			"usecache": s2b(argv.usecache),
 			"debug": s2b(argv.debug), 
 			"debugcache": s2b(argv.debugcache)
 		};
@@ -73,8 +73,9 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 			options.url         = decodeURIComponent(req.query.url);
 			options.filepattern = req.query.filepattern || "";
 			options.dirpattern  = req.query.dirpattern  || "";
-			options.debug       = req.query.debug       || false;
-			options.debugcache  = req.query.debugcache  || false;
+			options.usecache    = req.query.usecache    || "true";
+			options.debug       = req.query.debug       || "false";
+			options.debugcache  = req.query.debugcache  || "false";
 
 			dirwalk(options, 
 				function (err, list) {
@@ -84,44 +85,50 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 		})
 	}
 }
-}
-
-function getcache(key, cb) {
-	cb("", cache[key].list);
-}
-
-function writecache(key, list) {
-	cache[key] = {};
-	cache[key].ready  = false;
-	cache[key].list   = list;
-	cache[key].ready  = true;
-}
 
 function dirwalk(opts, path, cb) {
 
-	if (typeof(opts) === "object") {
-		// Although default is trailing slash in url and no leading slash
-		// in dirpattern, here we reverse that. For internal processing.
+	if (typeof(dirwalk.cache) === "undefined") {
+		dirwalk.cache = {};
+	}
 
+	function getcache(key, cb) {
+		cb("", dirwalk.cache[key].list);
+	}
+
+	function writecache(key, list) {
+		dirwalk.cache[key] = {};
+		dirwalk.cache[key].ready  = false;
+		dirwalk.cache[key].list   = list;
+		dirwalk.cache[key].ready  = true;
+	}
+
+	if (typeof(opts) === "object") {
 		var url          = opts.url;
 		opts.debug       = opts.debug       || false;
 		opts.debugcache  = opts.debugcache  || false;
 		opts.filepattern = opts.filepattern || "";
 		opts.dirpattern  = opts.dirpattern  || "";
 		opts.id          = opts.id          || "";
+
+		if (typeof(opts.usecache) === "undefined") {
+		 	opts.usecache = true;
+		}
+
 	} else {
 		var url  = opts;
-		var opts = {id: "", url: url, debug: false, debugcache: false, filepattern: "", dirpattern: ""};
+		var opts = {id: "", url: url, usecache: true, debug: false, debugcache: false, filepattern: "", dirpattern: ""};
 	}
 
 	if (typeof(opts.base) === "undefined") {
 		opts.base = urlp.parse(opts.url).path.replace(/^\//, "");
 	}
 
-	var debug       = opts.debug;
-	var debugcache  = opts.debugcache;
 	var filepattern = opts.filepattern;
 	var dirpattern  = opts.dirpattern;
+	var usecache    = opts.usecache;
+	var debug       = opts.debug;
+	var debugcache  = opts.debugcache;
 	var id          = opts.id;
 
 	if (id !== "") {
@@ -139,23 +146,37 @@ function dirwalk(opts, path, cb) {
 		if (debug) console.log(id + "dirwalk called with opts = " + JSON.stringify(opts));
 		var cb = path;
 		opts.cb = cb;
-
 		path = "";
-		if (cache[key]) {
-			if (cache[key].ready) { // Needed?
+
+		var cachehit = false;
+		if (dirwalk.cache[key]) {
+			if (dirwalk.cache[key].ready) { // Needed?
+				cachehit = true;
 				if (debugcache) console.log(id + "Direct cache hit for " + key)
-				cb("", cache[key].list);
-				return;
+				if (usecache) {
+	 				cb("", dirwalk.cache[key].list);
+					return;
+				} else {
+					if (debugcache) console.log(id + "Ignoring because usecache = false.")
+				}
 			}
 		}
-		if (cache[url]) {
-			if (cache[url].ready) { // Needed?
+		if (dirwalk.cache[url]) {
+			if (dirwalk.cache[url].ready) { // Needed?
+				cachehit = true;
 				if (debugcache) console.log(id + "Indirect cache hit for " + key);
-				finish(opts, cache[url].list);
-				return;			
+				if (usecache) {
+					finish(opts, dirwalk.cache[url].list);
+					return;
+				} else {
+					if (debugcache) console.log(id + "Ignoring because usecache = false.")					
+				}
+
 			}
 		}
-		if (debugcache) console.log(id + "No cache hit for " + key);
+
+		if (debugcache && !cachehit) console.log(id + "No cache hit for " + key);
+		
 		if (key !== url) {
 			if (typeof(dirwalk[url]) === "object") {
 				if (dirwalk[url].id) {
@@ -379,11 +400,14 @@ function dirwalk(opts, path, cb) {
 					if (!dirwalk[key].list) {
 						dirwalk[key].list = [];
 					}
-					if (href !== "") {
+					// !href.match(/\?/) to remove apache "files" like "?C=D;O=A"
+					if (href !== "" && !href.match(/\?/)) {
 						if (debug) console.log(id + "   Adding " + path + href + " to dirwalk[" + key + "].list");
 						dirwalk[key].list.push(path + href);
 					} else {
-						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
+						if (debug) {
+							console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");
+						}
 					}
 				}
 			})
@@ -422,7 +446,7 @@ function dirwalk(opts, path, cb) {
 		}
 
 		if (opts.dirpattern !== "") {
-			// Reduce list array.  See above method to avoid creating copy of list.
+			// Reduce list array. See above method to avoid creating copy of list.
 			var listr = [];
 			var kr = 0;
 			var lo = list.length;
@@ -461,7 +485,10 @@ function dirwalk(opts, path, cb) {
 			if (dirwalk[opts.key].onfinish) {
 				while (dirwalk[opts.key].onfinish.length > 0) {
 					copts = dirwalk[opts.key].onfinish.shift();
-					console.log(opts.id + " Found key callback for " + copts.id + ".");
+					if (debug) {
+						console.log(opts.id 
+							+ " Found key callback for " + copts.id + ".");
+					}
 					finish(copts, list);
 				}
 			}
