@@ -15,23 +15,24 @@ dirwalk(opts, function (error, list, flat, nested) {});
 
 If `URL` does not start with `http` or `https`, the file system is walked.
 
+Example
+
 ```javascript
 dirwalk({url: "./tmp/"}, 
 	function (err,list,flat,nested) {
 		console.log(list);
 		console.log(flat);
-		console.log(nested);
 	})
 ```
 
+returns
+
 ```javascript
 [ 'a/', 'a/file1', 'a/file2', 'b/', 'b/file3', 'b/file4', 'file0/' ]
+
 { '': [ 'a', 'b', 'file0' ],
   'a/': [ 'file1', 'file2' ],
   'b/': [ 'file3', 'file4' ] }
-{ '': [ 'a', 'b', 'file0' ],
-  a: { '': [ 'file1', 'file2' ] },
-  b: { '': [ 'file3', 'file4' ] } }
 ```
 
 ## Install
