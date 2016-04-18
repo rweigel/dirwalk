@@ -1,5 +1,6 @@
 var dirwalk = require('./dirwalk.js').dirwalk;
 var _ = require('lodash');
+
 // Start server for local testing.
 httpServer = require('http-server');
 var server = httpServer.createServer().listen(8080);
@@ -25,11 +26,9 @@ function cb(error, list, flat, nested) {
 
 	cb.Nc = cb.Nc + 1;
 	if (cb.Nc == N+1) {
-		console.log("lists match: " + _.isEqual(cb.lists[0], cb.lists[1]));
-		console.log("lists match: " + _.isEqual(cb.lists[0], cb.lists[2]));
+		console.log("Lists 0 and 1 match: " + _.isEqual(cb.lists[0], cb.lists[1]));
+		console.log("Lists 0 and 2 match: " + _.isEqual(cb.lists[0], cb.lists[2]));
 		console.log(JSON.stringify(cb.lists[0]))
-		//console.log(JSON.stringify(cb.lists[1]))
-		//console.log(JSON.stringify(cb.lists[2]))
 		process.exit(0);
 	}
 }
