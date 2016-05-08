@@ -244,7 +244,8 @@ function dirwalk(opts, path, cb) {
 					console.log("is dir  " + isdir);
 				}
 				//console.log(entry)
-				list.push(entry.path+tail);
+				if (!isdir)
+					list.push(entry.path+tail);
 			}))
 			// TODO: Modify http code so it does streaming too.
 			//.pipe(es.stringify())
@@ -386,7 +387,7 @@ function dirwalk(opts, path, cb) {
 
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
-						dirwalk[key].list.push(path + href);
+						//dirwalk[key].list.push(path + href);
 						if (debug) {
 							console.log(id + "   Calling dirwalk with path = " + newpath);
 						}

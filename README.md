@@ -49,5 +49,5 @@ curl "http://localhost:8004/?url=http://localhost:8080/tmp/"
 all return
 
 ```javascript
-["a/","a/aa/","a/aa/fileaa1","a/aa/fileaa2","a/filea1","a/filea2","b/","b/fileb","fileroot"]
+["a/aa/fileaa1","a/aa/fileaa2","a/filea1","a/filea2","b/fileb","fileroot"]
 ```
