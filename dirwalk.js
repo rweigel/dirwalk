@@ -1,5 +1,5 @@
-// TODO: Save cache object on exit
-// Allow depth limit
+// Allow depth value instead of only recursive=true|false
+// Allow same entryTypes as readdirp
 
 var request = require('request');
 var express = require('express');
@@ -25,8 +25,10 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 	                .default
 						({
 							'url': "",
-							'dirpattern': "",
 							'filepattern': "",
+							'dirpattern': "",
+							'recursive': "true",
+							'includedirs': "false",
 							'usecache': "true",
 							'debug': "false",
 							'debugcache': "false",
@@ -38,7 +40,9 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 		{
 			"url": argv.url, 
 			"filepattern": argv.filepattern, 
-			"dirpattern": argv.dirpattern, 
+			"dirpattern": argv.dirpattern,
+			"recursive": s2b(argv.recursive),
+			"includedirs": s2b(argv.includedirs), 
 			"usecache": s2b(argv.usecache),
 			"debug": s2b(argv.debug), 
 			"debugcache": s2b(argv.debugcache)
@@ -102,7 +106,7 @@ function dirwalk(opts, path, cb) {
 
 	function writecache(key, list) {
 		dirwalk.cache[key] = {};
-		dirwalk.cache[key].ready  = false;
+		dirwalk.cache[key].ready  = false; // Needed?
 		dirwalk.cache[key].list   = list;
 		dirwalk.cache[key].ready  = true;
 	}
@@ -113,7 +117,12 @@ function dirwalk(opts, path, cb) {
 		opts.debugcache  = opts.debugcache  || false;
 		opts.filepattern = opts.filepattern || "";
 		opts.dirpattern  = opts.dirpattern  || "";
+		opts.includedirs = opts.includedirs || false;
 		opts.id          = opts.id          || "";
+
+		if (typeof(opts.recursive) == "undefined") {
+			opts.recursive = true;
+		}
 
 		if (typeof(opts.usecache) === "undefined") {
 		 	opts.usecache = true;
@@ -130,6 +139,8 @@ function dirwalk(opts, path, cb) {
 
 	var filepattern = opts.filepattern;
 	var dirpattern  = opts.dirpattern;
+	var recursive   = opts.recursive;
+	var includedirs = opts.includedirs;
 	var usecache    = opts.usecache;
 	var debug       = opts.debug;
 	var debugcache  = opts.debugcache;
@@ -224,7 +235,17 @@ function dirwalk(opts, path, cb) {
 	} else {
 		// Local file system walk
 		var list = [];
-		var stream = readdirp({ root: url, "entryType": "both"});
+		if (includedirs) {
+			var entryType = "both";
+		} else {
+			var entryType = "files";
+		}
+		if (recursive) {
+			var dopts = {root: url, "entryType": entryType}
+		} else {
+			var dopts = {root: url, "depth": 0, "entryType": entryType}
+		}
+		var stream = readdirp(dopts);
 		stream
 			.on('warn', function (err) { 
 				console.error('non-fatal error', err); 
@@ -389,11 +410,15 @@ function dirwalk(opts, path, cb) {
 
 					if (href !== "") {
 						if (debug) console.log(id + "   Adding " + newpath + " to dirwalk[" + key + "].list");
-						//dirwalk[key].list.push(path + href);
+						if (includedirs == true) {
+							dirwalk[key].list.push(path + href);
+						}
 						if (debug) {
 							console.log(id + "   Calling dirwalk with path = " + newpath);
 						}
-						dirwalk(opts, newpath, cb);
+						if (recursive == true) {
+							dirwalk(opts, newpath, cb);
+						}
 					} else {
 						if (debug) console.log(id + "   Not adding empty path + href to dirwalk[" + key + "].list");						
 						if (debug) {

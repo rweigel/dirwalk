@@ -8,7 +8,7 @@
 ### Usage
 
 ```javascript
-opts = {url: URL, ["dirpattern": REGEXP, "filepattern": REGEXP, "usecache": true]};
+opts = {url: URL, ["dirpattern": REGEXP, "filepattern": REGEXP, "usecache": true, "recursive": true, "includedirs": false]};
 
 dirwalk(opts, function (error, list) {});
 ```
@@ -24,12 +24,17 @@ npm install
 npm test
 ```
 
-### Example
+### Basic Example
 
 See also ```dirwalk-example.js```
 
 ```javascript
 dirwalk({url: "./tmp/"}, function (err,list) {console.log(list);})
+```
+
+The following examples require starting a server using
+```
+node_modules/http-server/bin/http-server -p 8080 &
 ```
 
 ```javascript
@@ -50,4 +55,14 @@ all return
 
 ```javascript
 ["a/aa/fileaa1","a/aa/fileaa2","a/filea1","a/filea2","b/fileb","fileroot"]
+```
+
+### Other examples
+
+```bash
+node dirwalk.js --url "http://localhost:8080/tmp/" --includedirs true --recursive false
+```
+
+```bash
+node dirwalk.js --url "tmp/" --includedirs true --recursive false
 ```
