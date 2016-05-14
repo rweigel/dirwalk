@@ -1,4 +1,5 @@
 // TODO: Save cache object on exit
+// Allow depth limit
 
 var request = require('request');
 var express = require('express');
@@ -15,6 +16,7 @@ var fs = require('fs');
 function s2b(str) {if (str === "true") {return true} else {return false}}
 function s2i(str) {return parseInt(str)}
 
+// Command line mode
 if (process.argv[1].slice(-10) === "dirwalk.js") {
 
 	function ds() {return (new Date()).toISOString() + " [dirwalk] "}

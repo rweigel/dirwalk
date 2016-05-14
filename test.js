@@ -15,7 +15,7 @@ var debug = false;
 var debugcache = true;
 
 // TODO: This needs to be modified each time a test is added.
-var Nt = 9; // Number of tests.
+var Nt = 9;   // Number of tests.
 var Ntt = 12; // Number of tests including subtests.
 
 var express = require('express');
@@ -58,13 +58,15 @@ function finish(status) {
 		finish.Nf = 0; // Passes
 		finish.Nc = 0; // Calls
 	}
-	finish.Nc = finish.Nc + 1;
 
 	if (status) {
 		finish.Np = finish.Np + 1;
 	} else {
 		finish.Nf = finish.Nf + 1;
 	}
+
+	finish.Nc = finish.Nc + 1;
+
 	if (finish.Nc == Nt) {
 		if (finish.Np == Nt) {
 			console.log("-----------------");
@@ -113,7 +115,7 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 5) {
+			if (list.length == 4) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
@@ -134,10 +136,7 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (debug) {
-				console.log(list)
-			}
-			if (list.length == 5) {
+			if (list.length == 4) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
@@ -158,7 +157,7 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 5) {
+			if (list.length == 4) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
@@ -178,10 +177,10 @@ function test(i) {
 
 		// Test cache.
 		var url = "http://mag.gmu.edu/git/dirwalk/tmp/";
-		var opts = {id: "1a", url: url, debug: debug, debugcache: debugcache};
+		var opts = {id: "4a", url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (list.length == 9) {
+			if (list.length == 6) {
 				console.log(opts.id + " PASS " + url);
 				finish(true);
 			} else {
@@ -189,10 +188,10 @@ function test(i) {
 				console.log(list)
 				finish(true);
 			}
-			opts.id = "1b";
+			opts.id = "4b";
 			console.log(opts.id + " url = " + url)
 			dirwalk(opts, function (error, list, flat, nested) {
-				if (list.length == 9) {
+				if (list.length == 6) {
 					console.log(opts.id + " PASS " + url);
 					finish(true);
 				} else {
@@ -201,10 +200,10 @@ function test(i) {
 					finish(false);
 				}
 				opts.dirpattern = "a/aa/";
-				opts.id = "1c";
+				opts.id = "4c";
 				console.log(opts.id + " url = " + url + "; dirpattern = " + opts.dirpattern);
 				dirwalk(opts, function (error, list, flat, nested) {
-					if (list.length == 3) {
+					if (list.length == 2) {
 						console.log(opts.id + " PASS " + url)
 						finish(true);
 					} else {
@@ -227,8 +226,7 @@ function test(i) {
 		var opts = {id: i, url: url, dirpattern: "a/aa/", debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (error) console.log(error);
-			if (list.length == 3) {
+			if (list.length == 2) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
@@ -249,7 +247,6 @@ function test(i) {
 		var opts = {id: i, url: url, filepattern: "fileroot", debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			if (error) console.log(error);
 			if (list.length == 1) {
 				console.log(i + " PASS " + url)
 				finish(true);
@@ -291,11 +288,10 @@ function test(i) {
 		var opts = {id: i, url: url, debug: debug, debugcache: debugcache};
 		console.log(opts.id + " url = " + url)
 		dirwalk(opts, function (error, list, flat, nested) {
-			console.log(list)
 			if (debug) {
 				console.log(list)
 			}
-			if (list.length == 5) {
+			if (list.length == 4) {
 				console.log(i + " PASS " + url)
 				finish(true);
 			} else {
