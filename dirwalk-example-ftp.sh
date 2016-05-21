@@ -1,0 +1,1 @@
+node dirwalk.js --url ftp://gong2.nso.edu/oQR/zqa/201605 --dirpattern bbzqa

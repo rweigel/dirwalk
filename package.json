@@ -13,7 +13,7 @@
 		"yargs": "*",
 		"http-server":"*",
 		"lodash":"*",
-		"dirwalk": "https://github.com/rweigel/dirwalk/tarball/master"
+		"jsftp":"1.5.3"
 	},
 	"scripts": {
 		"test": "node test.js true; node test.js false",

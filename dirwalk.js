@@ -32,6 +32,7 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 							'usecache': "true",
 							'debug': "false",
 							'debugcache': "false",
+							'verbose': "false",
 							'port': ""
 						})
 						.argv
@@ -45,7 +46,8 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 			"includedirs": s2b(argv.includedirs), 
 			"usecache": s2b(argv.usecache),
 			"debug": s2b(argv.debug), 
-			"debugcache": s2b(argv.debugcache)
+			"debugcache": s2b(argv.debugcache),
+			"verbose": s2b(argv.verbose),			
 		};
 
 	if (options.url !== "") {
@@ -84,6 +86,7 @@ if (process.argv[1].slice(-10) === "dirwalk.js") {
 			options.usecache    = req.query.usecache    || "true";
 			options.debug       = req.query.debug       || "false";
 			options.debugcache  = req.query.debugcache  || "false";
+			options.verbose     = req.query.verbose     || "false";
 
 			dirwalk(options, 
 				function (err, list) {
@@ -113,12 +116,13 @@ function dirwalk(opts, path, cb) {
 
 	if (typeof(opts) === "object") {
 		var url          = opts.url;
-		opts.debug       = opts.debug       || false;
-		opts.debugcache  = opts.debugcache  || false;
+		opts.id          = opts.id          || "";
 		opts.filepattern = opts.filepattern || "";
 		opts.dirpattern  = opts.dirpattern  || "";
 		opts.includedirs = opts.includedirs || false;
-		opts.id          = opts.id          || "";
+		opts.debug       = opts.debug       || false;
+		opts.debugcache  = opts.debugcache  || false;
+		opts.verbose     = opts.verbose     || false;
 
 		if (typeof(opts.recursive) == "undefined") {
 			opts.recursive = true;
@@ -145,6 +149,7 @@ function dirwalk(opts, path, cb) {
 	var debug       = opts.debug;
 	var debugcache  = opts.debugcache;
 	var id          = opts.id;
+	var verbose     = opts.verbose;
 
 	if (id !== "") {
 		id = id + " ";
@@ -232,6 +237,8 @@ function dirwalk(opts, path, cb) {
 		// HTTP walk
 		if (debug) console.log(id + "Input path: " + path);
 		doget(url, path);
+	} else if (url.match("ftp://")) {
+ 		doftpget(url, path);
 	} else {
 		// Local file system walk
 		var list = [];
@@ -275,8 +282,55 @@ function dirwalk(opts, path, cb) {
 			//.pipe(process.stdout);
 	}
 
+	function doftpget(url, path) {
+		var urlparser = require('url')
+		var uriparsed = urlparser.parse(url);
+
+		if (typeof(dirwalk[key].c) == "undefined") {
+			var Client = require('ftp');
+			var c = new Client();
+			dirwalk[key].c = c;
+			dirwalk[key].patho = uriparsed.path;
+			if (verbose) console.log("Opening connection to " + uriparsed.host)
+			c.on('ready', function(err) {
+				if (err) console.log(err);
+				doftpget(url, uriparsed.path);
+			});
+			c.connect({host: uriparsed.host});
+			return;
+		}
+
+		if (verbose) console.log("Getting " + path)
+		path = path.replace(/\/$/,"");
+		dirwalk[key].c.list(path, function (err, list) {
+			if (err) if (err) console.error(err);
+			if (verbose) console.log("Finish  " + path + " ("+list.length+")");
+			for (var i = 0;i < list.length; i++) {
+				if (list[i].type === 'd') {
+					//console.log(list[i].name)
+					if (includedirs == true) {
+						dirwalk[key].list.push(list[i].name + "/")
+					}
+					if (recursive == true) {
+						dirwalk(opts, path + "/" + list[i].name, cb);
+					}
+				} else {
+					path = path.replace(dirwalk[key].patho + "/","");
+					dirwalk[key].list.push(path + "/" + list[i].name)
+				}
+				
+			}
+			if (dirwalk[key].Nr == dirwalk[key].Nc) {
+				if (verbose) console.log("Closing connection.")
+				dirwalk[key].c.end();
+				finish(opts, dirwalk[key].list);
+			}
+	    	dirwalk[key].Nc = dirwalk[key].Nc + 1;
+
+		});
+	}
+
 	function doget(url, path) {
-		var request = require("request");
 		var getopts = {method: 'GET', uri: url, gzip: true, pool: {maxSockets: 5}};
 		if (debug) console.log(id + "Requesting " + url);
 		var pathr = path.replace(/\/$/,"")
