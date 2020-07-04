@@ -5,11 +5,11 @@
 	"dependencies": {
 		"request" : "2.9.203",
 		"express": "4.0.0",
+		"event-stream": "3.3.2",
 		"serve-index": "*",
 		"cheerio": "*",
 		"readdirp": "*",
 		"path": "*",
-		"event-stream": "*",
 		"yargs": "*",
 		"http-server":"*",
 		"lodash":"*",
