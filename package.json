@@ -3,7 +3,7 @@
   	"version": "0.0.4",
   	"engines":{"node": "0.12.x"},
 	"dependencies": {
-		"request" : "2.9.203",
+		"request" : "2.88.2",
 		"express": "4.0.0",
 		"event-stream": "3.3.2",
 		"serve-index": "*",
